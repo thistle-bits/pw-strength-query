@@ -23,6 +23,7 @@ func main() {
 	fmt.Printf("length:        %d\n", result.Length)
 	fmt.Printf("charset size:  %d\n", result.PoolSize)
 	fmt.Printf("entropy:       %.1f bits\n", result.Entropy)
+	fmt.Printf("common:        %t\n", result.Common)
 	fmt.Printf("category:      %s\n", result.Category)
 	fmt.Printf("online guess:  %s\n", strength.FormatSeconds(result.OnlineCrackSeconds))
 	fmt.Printf("offline guess: %s\n", strength.FormatSeconds(result.OfflineCrackSeconds))

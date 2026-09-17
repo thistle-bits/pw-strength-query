@@ -60,6 +60,7 @@ type Result struct {
 	Length              int
 	PoolSize            int
 	Entropy             float64 // bits
+	Common              bool    // on the common-password list, under normalization
 	Category            Category
 	OnlineCrackSeconds  float64
 	OfflineCrackSeconds float64
@@ -139,9 +140,16 @@ func CategoryFor(entropy float64) Category {
 	}
 }
 
+// commonPasswordGuesses is the guess count assigned to anything on the
+// common-password list. A dictionary attacker tries these first, so the
+// character-class entropy math (which assumes a uniform random draw) is
+// the wrong model for them entirely.
+const commonPasswordGuesses = 10
+
 // Analyze runs the full estimate for a single password.
 func Analyze(password string) Result {
 	entropy := Entropy(password)
+	common := IsCommon(password)
 
 	var guesses float64
 	if entropy > 0 {
@@ -150,11 +158,18 @@ func Analyze(password string) Result {
 		guesses = math.Pow(2, entropy-1)
 	}
 
+	category := CategoryFor(entropy)
+	if common {
+		category = VeryWeak
+		guesses = commonPasswordGuesses
+	}
+
 	return Result{
 		Length:              len([]rune(password)),
 		PoolSize:            poolSize(password),
 		Entropy:             entropy,
-		Category:            CategoryFor(entropy),
+		Common:              common,
+		Category:            category,
 		OnlineCrackSeconds:  guesses / onlineGuessesPerSecond,
 		OfflineCrackSeconds: guesses / offlineGuessesPerSecond,
 	}

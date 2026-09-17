@@ -66,6 +66,43 @@ func TestAnalyzeCrackTimeOrdering(t *testing.T) {
 	}
 }
 
+func TestIsCommon(t *testing.T) {
+	cases := []struct {
+		password string
+		want     bool
+	}{
+		{"password", true},
+		{"PASSWORD", true},
+		{"p4ssw0rd", true},
+		{"password123", true},
+		{"password123!", true},
+		{"Passw0rd123!", true},
+		{"correct horse battery staple", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		if got := IsCommon(c.password); got != c.want {
+			t.Errorf("IsCommon(%q) = %v, want %v", c.password, got, c.want)
+		}
+	}
+}
+
+func TestAnalyzeCommonPasswordOverridesCategory(t *testing.T) {
+	// Raw entropy alone would call this "strong": it's long and uses three
+	// character classes. It's still one of the first guesses in any real
+	// attacker's dictionary.
+	result := Analyze("Passw0rd123!")
+	if !result.Common {
+		t.Fatalf("expected Passw0rd123! to be flagged common")
+	}
+	if result.Category != VeryWeak {
+		t.Errorf("expected common password to be categorized VeryWeak, got %v", result.Category)
+	}
+	if result.OnlineCrackSeconds >= 60 {
+		t.Errorf("expected common password to crack in under a minute online, got %v seconds", result.OnlineCrackSeconds)
+	}
+}
+
 func TestFormatSecondsBuckets(t *testing.T) {
 	cases := []struct {
 		seconds float64

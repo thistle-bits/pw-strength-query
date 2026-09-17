@@ -21,6 +21,7 @@ go run . 'correct horse battery staple'
 length:        29
 charset size:  27
 entropy:       137.9 bits
+common:        false
 category:      very strong
 online guess:  centuries
 offline guess: centuries
@@ -59,7 +60,14 @@ This is the standard back-of-envelope model most strength meters build
 on. It assumes the password was chosen uniformly at random from its
 apparent character set, which real passwords never are — `Password1!`
 scores well by this math despite being one of the first things a real
-attacker would try. See the roadmap below.
+attacker would try.
+
+To catch that case, the password is also checked against a small list of
+well-known common passwords, after lowercasing it, undoing obvious
+leetspeak substitutions (`p4ssw0rd` -> `password`), and stripping
+decorative trailing digits and symbols (`password123!` -> `password`). A
+match forces the category down to "very weak" and the crack time down to
+near-instant, regardless of what the entropy math says.
 
 ## Design note
 
@@ -71,8 +79,6 @@ without pulling apart `Analyze` itself.
 
 ## Roadmap
 
-- Detect common passwords and simple substitutions (`Password1!`) and
-  penalize them regardless of raw entropy
 - Detect keyboard-walk and repeated-character patterns
 - Treat non-ASCII letters as their own character class instead of
   lumping them into "symbol"
