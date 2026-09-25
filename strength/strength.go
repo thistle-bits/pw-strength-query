@@ -61,6 +61,7 @@ type Result struct {
 	PoolSize            int
 	Entropy             float64 // bits
 	Common              bool    // on the common-password list, under normalization
+	Patterned           bool    // a keyboard walk or repeated/periodic run
 	Category            Category
 	OnlineCrackSeconds  float64
 	OfflineCrackSeconds float64
@@ -146,10 +147,21 @@ func CategoryFor(entropy float64) Category {
 // the wrong model for them entirely.
 const commonPasswordGuesses = 10
 
+// patternGuesses caps the guess count assigned to a keyboard walk or a
+// repeated/periodic run. These aren't in any dictionary, but they're
+// exactly the kind of thing a rule-based cracker generates early on, so
+// they don't deserve the guess count their raw entropy implies either.
+// It's a cap rather than a flat replacement (see Analyze) because a short
+// patterned password can have naive entropy guesses below this already;
+// the pattern should never make a password look harder to crack than the
+// entropy math already said it was.
+const patternGuesses = 1e5
+
 // Analyze runs the full estimate for a single password.
 func Analyze(password string) Result {
 	entropy := Entropy(password)
 	common := IsCommon(password)
+	patterned := IsPatterned(password)
 
 	var guesses float64
 	if entropy > 0 {
@@ -159,9 +171,13 @@ func Analyze(password string) Result {
 	}
 
 	category := CategoryFor(entropy)
-	if common {
+	switch {
+	case common:
 		category = VeryWeak
 		guesses = commonPasswordGuesses
+	case patterned:
+		category = VeryWeak
+		guesses = math.Min(guesses, patternGuesses)
 	}
 
 	return Result{
@@ -169,6 +185,7 @@ func Analyze(password string) Result {
 		PoolSize:            poolSize(password),
 		Entropy:             entropy,
 		Common:              common,
+		Patterned:           patterned,
 		Category:            category,
 		OnlineCrackSeconds:  guesses / onlineGuessesPerSecond,
 		OfflineCrackSeconds: guesses / offlineGuessesPerSecond,

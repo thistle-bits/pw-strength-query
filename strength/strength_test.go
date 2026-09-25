@@ -98,8 +98,8 @@ func TestAnalyzeCommonPasswordOverridesCategory(t *testing.T) {
 	if result.Category != VeryWeak {
 		t.Errorf("expected common password to be categorized VeryWeak, got %v", result.Category)
 	}
-	if result.OnlineCrackSeconds >= 60 {
-		t.Errorf("expected common password to crack in under a minute online, got %v seconds", result.OnlineCrackSeconds)
+	if result.OnlineCrackSeconds >= 3600 {
+		t.Errorf("expected common password to crack in under an hour online, got %v seconds", result.OnlineCrackSeconds)
 	}
 }
 

@@ -22,6 +22,7 @@ length:        29
 charset size:  27
 entropy:       137.9 bits
 common:        false
+patterned:     false
 category:      very strong
 online guess:  centuries
 offline guess: centuries
@@ -69,6 +70,18 @@ decorative trailing digits and symbols (`password123!` -> `password`). A
 match forces the category down to "very weak" and the crack time down to
 near-instant, regardless of what the entropy math says.
 
+The same problem shows up in a different shape with keyboard walks and
+repeated runs: `qwertyuiop1234` scores well on raw entropy because it's
+long and mixes character classes, but it's not a random draw from that
+pool, it's a straight line across the keyboard. `IsPatterned` catches a
+run of the same character (`aaaaaaaa`), a short substring repeated to
+fill out the length (`abcabcabc`), and a walk along a keyboard row in
+either direction (`qwerty`, `1234567890`, `lkjhgfdsa`). A match forces
+the same "very weak" category and near-instant crack time as a common
+password, unless the password is already on the common list, in which
+case the common-password guess count wins because it's the smaller of
+the two.
+
 ## Design note
 
 Every exported function in the `strength` package is pure: same input,
@@ -79,7 +92,6 @@ without pulling apart `Analyze` itself.
 
 ## Roadmap
 
-- Detect keyboard-walk and repeated-character patterns
 - Treat non-ASCII letters as their own character class instead of
   lumping them into "symbol"
 - Add a `-json` output flag for scripting
