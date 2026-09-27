@@ -48,8 +48,12 @@ fmt.Println(strength.FormatSeconds(result.OnlineCrackSeconds)) // "instantly"
 ## How the estimate works
 
 1. Figure out which character classes appear in the password (lowercase,
-   uppercase, digits, everything else) and add up the size of each class
-   that's present. That's the assumed pool size.
+   uppercase, digits, non-ASCII letters, everything else) and add up the
+   size of each class that's present. That's the assumed pool size.
+   Non-ASCII letters (`é`, `ñ`, `Ж`) get their own class rather than
+   falling into the symbol bucket, sized as a conservative stand-in for
+   "some alphabet", since Unicode has far more letters than any one person
+   actually draws from.
 2. Entropy is `length * log2(pool size)` — the number of bits you'd need
    to pick a password of that length from that pool at random.
 3. Crack time is entropy converted to an average number of guesses
@@ -92,7 +96,5 @@ without pulling apart `Analyze` itself.
 
 ## Roadmap
 
-- Treat non-ASCII letters as their own character class instead of
-  lumping them into "symbol"
 - Add a `-json` output flag for scripting
 - Package as a library-only mode with no CLI dependency on stdin prompts

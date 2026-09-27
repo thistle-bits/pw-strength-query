@@ -34,6 +34,27 @@ func TestEntropyGrowsWithCharsetVariety(t *testing.T) {
 	}
 }
 
+func TestEntropyNonASCIILetterIsOwnClass(t *testing.T) {
+	// "café" and "cafe" are both four letters from a single character
+	// class, so they should score the same length but different entropy:
+	// the accented "é" draws from the non-ASCII letter pool, not the
+	// catch-all symbol pool, and that pool is a different size than either
+	// the lowercase or symbol pools.
+	ascii := Entropy("cafe")
+	accented := Entropy("café")
+	if accented == ascii {
+		t.Errorf("expected accented letter to change entropy, both gave %v", ascii)
+	}
+}
+
+func TestPoolSizeMixesNonASCIILetterWithSymbol(t *testing.T) {
+	lettersOnly := poolSize("café")
+	withSymbol := poolSize("café!")
+	if withSymbol <= lettersOnly {
+		t.Errorf("expected adding a symbol to widen the pool, got %v <= %v", withSymbol, lettersOnly)
+	}
+}
+
 func TestCategoryForThresholds(t *testing.T) {
 	cases := []struct {
 		entropy float64

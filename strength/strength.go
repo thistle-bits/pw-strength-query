@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"unicode"
 )
 
 // Category buckets an entropy value into something a person can react to.
@@ -67,13 +68,23 @@ type Result struct {
 	OfflineCrackSeconds float64
 }
 
+// nonASCIILetterPoolSize is a deliberately conservative stand-in for "the
+// alphabet a non-ASCII letter was drawn from". Unicode has well over 100,000
+// letters, but nobody picks a password by drawing uniformly from all of them;
+// they draw from their own alphabet, which is usually smaller than 26-letter
+// English but not by an order of magnitude (Cyrillic has 33, Greek 24, the
+// accented Latin letters used across Western Europe add a few dozen more).
+// 64 sits in that range without pretending we know which script the user is
+// typing in.
+const nonASCIILetterPoolSize = 64
+
 // poolSize returns the size of the character set the password draws from,
 // based on which classes of character actually appear in it. A password
 // using only digits gets a pool of 10; add one uppercase letter and the
 // pool jumps to 36, because now every position of that length could have
 // been a digit or an uppercase letter.
 func poolSize(password string) int {
-	var hasLower, hasUpper, hasDigit, hasSymbol bool
+	var hasLower, hasUpper, hasDigit, hasSymbol, hasNonASCIILetter bool
 	for _, r := range password {
 		switch {
 		case strings.ContainsRune(lowercase, r):
@@ -82,6 +93,8 @@ func poolSize(password string) int {
 			hasUpper = true
 		case strings.ContainsRune(digits, r):
 			hasDigit = true
+		case r > unicode.MaxASCII && unicode.IsLetter(r):
+			hasNonASCIILetter = true
 		default:
 			hasSymbol = true
 		}
@@ -97,10 +110,12 @@ func poolSize(password string) int {
 	if hasDigit {
 		size += len(digits)
 	}
+	if hasNonASCIILetter {
+		size += nonASCIILetterPoolSize
+	}
 	if hasSymbol {
 		// Printable ASCII symbols and punctuation, roughly. Anything
-		// outside our four named classes falls in here, which also
-		// covers non-ASCII text for now (see README roadmap).
+		// outside our named classes falls in here.
 		size += 33
 	}
 	return size
